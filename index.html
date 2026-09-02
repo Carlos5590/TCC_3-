@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>StudyQuest - Organize seus estudos</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- TELA DE LOGIN/CADASTRO -->
+    <div id="tela-autenticacao" class="tela-ativa">
+        <div class="container-auth">
+           <h1>StudyQuest</h1>
+            
+            <!-- FORMULÁRIO DE LOGIN -->
+            <div id="formulario-login" class="formulario-ativo">
+                <h2>Faça Login</h2>
+                <input type="text" id="login-usuario" placeholder="Usuário" class="input-auth">
+                <input type="password" id="login-senha" placeholder="Senha" class="input-auth">
+                <button onclick="fazerLogin()" class="btn-auth">Entrar</button>
+                <p class="toggle-form">Não tem conta? <span onclick="alternarFormulario()">Cadastre-se</span></p>
+            </div>
+
+            <!-- FORMULÁRIO DE CADASTRO -->
+            <div id="formulario-cadastro" class="formulario-oculto">
+                <h2>Criar Conta</h2>
+                <input type="text" id="cadastro-usuario" placeholder="Escolha um usuário" class="input-auth">
+                <input type="email" id="cadastro-email" placeholder="Email" class="input-auth">
+                <input type="password" id="cadastro-senha" placeholder="Crie uma senha" class="input-auth">
+                <input type="password" id="cadastro-confirmar" placeholder="Confirme a senha" class="input-auth">
+                <select id="cadastro-avatar" class="input-auth">
+                    <option value="🎓">🎓 Estudante</option>
+                    <option value="🧠">🧠 Gênio</option>
+                    <option value="🚀">🚀 Explorador</option>
+                    <option value="🌟">🌟 Estrela</option>
+                    <option value="🎯">🎯 Precisão</option>
+                    <option value="📚">📚 Livro Vivo</option>
+                    <option value="🔬">🔬 Cientista</option>
+                    <option value="🌍">🌍 Viajante</option>
+                    <option value="🎨">🎨 Criativo</option>
+                    <option value="⚡">⚡ Energia</option>
+                </select>
+                <button onclick="fazerCadastro()" class="btn-auth">Cadastrar</button>
+                <p class="toggle-form">Já tem conta? <span onclick="alternarFormulario()">Faça login</span></p>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- TELA DO APLICATIVO PRINCIPAL -->
+    <div id="tela-app" class="tela-oculta">
+        <div class="app-layout">
+            <!-- MENU LATERAL -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>📚 Navegação</h2>
+                </div>
+
+                <ul id="lista-materias" class="lista-materias">
+                    <li id="nav-ranking" class="materia-item nav-item ativo" onclick="abrirRanking()">
+                        <span>🏆</span>
+                        <span>Ranking</span>
+                    </li>
+                    <li id="nav-quiz" class="materia-item nav-item" onclick="abrirQuiz()">
+                        <span>❓</span>
+                        <span>Quiz</span>
+                    </li>
+                    <li id="nav-game" class="materia-item nav-item" onclick="abrirGame()">
+                        <span>🎮</span>
+                        <span>Game</span>
+                    </li>
+                </ul>
+
+                <div class="sidebar-progresso">
+                    <div class="sidebar-perfil">
+                        <span id="sidebar-avatar">🎓</span>
+                        <div>
+                            <strong id="sidebar-usuario">Estudante</strong>
+                            <small id="sidebar-mensagem">Continue avançando!</small>
+                        </div>
+                    </div>
+                    <div class="sidebar-numeros">
+                        <span>⭐ Nível <strong id="sidebar-nivel">1</strong></span>
+                        <span>🔥 <strong id="sidebar-sequencia">0</strong> dias</span>
+                    </div>
+                    <div class="sidebar-barra"><span id="sidebar-barra-progresso"></span></div>
+                    <small id="sidebar-pontos">0 pontos para o próximo nível</small>
+                </div>
+
+                <div class="sidebar-divider"></div>
+                <div class="sidebar-materias-header">
+                    <h3>🗓️ Minha agenda</h3>
+                </div>
+
+                <div class="agenda-form">
+                    <input type="text" id="agenda-titulo" placeholder="Ex.: Prova de Ciências" class="input-materia">
+                    <select id="agenda-tipo" class="input-materia">
+                        <option value="📚">📚 Estudo</option>
+                        <option value="📝">📝 Trabalho</option>
+                        <option value="📖">📖 Prova</option>
+                    </select>
+                    <input type="date" id="agenda-data" class="input-materia">
+                    <button onclick="adicionarEventoAgenda()" class="btn-add-materia">Adicionar</button>
+                </div>
+
+                <ul id="lista-agenda" class="lista-agenda"></ul>
+                <div class="sidebar-materias-header materias-salvas-titulo">
+                    <h3>📚 Matérias salvas</h3>
+                </div>
+                <ul id="lista-materias-custom" class="lista-materias"></ul>
+            </aside>
+
+            <!-- CONTEÚDO PRINCIPAL -->
+            <main class="conteudo-principal">
+                <div class="header">
+                    <div class="header-top">
+                       <h1>StudyQuest</h1>
+                        <div class="user-info">
+                            <button id="theme-toggle" onclick="toggleTheme()" class="btn-theme">🌙 Dark</button>
+                            <span id="usuario-nome">Usuário</span>
+                            <button onclick="fazerLogout()" class="btn-logout">Sair</button>
+                        </div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span>⭐ Nível:</span>
+                            <span id="nivel" class="stat-value">1</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>💰 Pontos:</span>
+                            <span id="pontos" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>🎯 Próximo Nível:</span>
+                            <span id="proxNivel" class="stat-value">100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTEÚDO RANKING -->
+                <div id="conteudo-ranking" class="conteudo-ativo">
+                    <div class="secao painel-inicial">
+                        <h2>📊 Seu painel de estudos</h2>
+                        <p class="painel-boas-vindas">Um resumo rápido para você saber como está avançando.</p>
+                        <div id="painel-progresso" class="painel-grid"></div>
+                        <div class="painel-acoes">
+                            <button class="btn-primary" onclick="continuarUltimaFase()">▶️ Continuar fase</button>
+                            <button class="btn-primary" onclick="abrirQuiz()">❓ Quiz diário</button>
+                            <button class="btn-primary" onclick="definirMetaEstudo()">🎯 Definir meta</button>
+                        </div>
+                        <div id="painel-estatisticas" class="painel-detalhes"></div>
+                        <div id="painel-calendario" class="painel-detalhes"></div>
+                        <div id="painel-dica" class="painel-dica"></div>
+                    </div>
+                    <div class="secao">
+                        <h2>🏆 Ranking de Usuários</h2>
+                        <div id="ranking-container" class="ranking-container"></div>
+                    </div>
+                </div>
+
+                <!-- CONTEÚDO QUIZ -->
+                <div id="conteudo-quiz" class="conteudo-oculto">
+                    <div class="secao">
+                        <h2>❓ Quiz Rápido</h2>
+                        <div id="quiz-container">
+                            <div id="pergunta-display"></div>
+                            <div id="opcoes-container"></div>
+                            <button onclick="proximaPergunta()" class="btn-primary">Próxima Pergunta</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTEÚDO GAME -->
+                <div id="conteudo-game" class="conteudo-oculto">
+                    <div class="secao">
+                        <h2>Desafios de aprendizagem</h2>
+                        <p class="game-intro">Escolha uma matéria, encare os desafios e descubra até onde você consegue chegar.</p>
+                        <div id="game-view">
+                            <div id="selecao-materias" class="selecao-materias-grid">
+                                <!-- Matérias serão carregadas dinamicamente -->
+                            </div>
+                        </div>
+                        <div id="game-quiz-container" class="game-quiz-container oculto">
+                            <button onclick="voltarAoMenu()" class="btn-voltar">← Voltar</button>
+                            <div class="game-quiz-content">
+                                <div id="game-pergunta-display"></div>
+                                <div id="game-opcoes-container"></div>
+                                <div id="game-resultado" class="game-resultado oculto"></div>
+                                <div id="proxima-game" class="btn-proxima-game" style="display:none; margin-top: 20px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <!-- CONTEÚDO MATÉRIAS -->
+                <div id="conteudo-materias" class="conteudo-oculto">
+                    <div class="secao">
+                        <h2 id="titulo-materia">Minha Matéria</h2>
+                        <div class="input-group">
+                            <input id="tarefa-materia" placeholder="Adicione um trabalho ou tarefa..." type="text">
+                            <button onclick="adicionarTarefaMateria()" class="btn-primary">Adicionar</button>
+                        </div>
+                        <ul id="lista-tarefas-materia" class="lista-tarefas"></ul>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    </div>
+    <script src="script.js"></script>
+
+</body>
+</html>
