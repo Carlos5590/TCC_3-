@@ -1,0 +1,13 @@
+{
+  "name": "studyquest",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/database": "^1.0.0",
+    "bcryptjs": "^2.4.3",
+    "drizzle-orm": "beta"
+  },
+  "devDependencies": {
+    "drizzle-kit": "beta"
+  }
+}

@@ -1,5 +1,29 @@
 // ========== AUTENTICAÇÃO ==========
 let usuarioAtual = null;
+let tokenSessao = null;
+
+function salvarUsuarioLocal(usuarios) {
+    localStorage.setItem("usuarios", JSON.stringify(usuarios));
+    sincronizarProgresso(usuarios[usuarioAtual]);
+}
+
+function sincronizarProgresso(dadosUsuario) {
+    if (!usuarioAtual || !tokenSessao || !dadosUsuario) {
+        return;
+    }
+    fetch("/api/progress", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            usuario: usuarioAtual,
+            token: tokenSessao,
+            progresso: dadosUsuario,
+        }),
+    }).catch(() => {
+        // Falha de rede: os dados continuam salvos localmente e serão
+        // reenviados na próxima chamada a salvarDadosUsuario().
+    });
+}
 
 function escaparHTML(valor) {
     return String(valor)
@@ -25,7 +49,7 @@ function alternarFormulario() {
     document.getElementById("cadastro-confirmar").value = "";
 }
 
-function fazerCadastro() {
+async function fazerCadastro() {
     let usuario = document.getElementById("cadastro-usuario").value.trim();
     let email = document.getElementById("cadastro-email").value.trim();
     let senha = document.getElementById("cadastro-senha").value;
@@ -47,41 +71,27 @@ function fazerCadastro() {
         return;
     }
 
-    // Verificar se usuário já existe
-    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || {};
-    if (usuarios[usuario]) {
-        alert("Este usuário já existe!");
-        return;
+    try {
+        const resposta = await fetch("/api/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario, email, senha, avatar }),
+        });
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            alert(dados.erro || "Não foi possível concluir o cadastro.");
+            return;
+        }
+
+        alert("Cadastro realizado com sucesso! Faça login para continuar.");
+        alternarFormulario();
+    } catch (erro) {
+        alert("Não foi possível conectar ao servidor. Tente novamente.");
     }
-
-    // Salvar novo usuário
-    usuarios[usuario] = {
-        email: email,
-        senha: senha,
-        nivel: 1,
-        pontos: 0,
-        badges: [],
-        tarefas: [],
-        perguntaAtual: 0,
-        materias: {},
-        materiaSelecionada: null,
-        avatar: avatar,
-        quizDiario: null,
-        respostasUsuarioGame: {},
-        fasesConcluidas: {},
-        diasEstudo: [],
-        ultimaFaseGame: null,
-        metaDiaria: 1,
-        progressoMeta: { data: null, fases: 0 },
-        agendaEventos: []
-    };
-
-    localStorage.setItem("usuarios", JSON.stringify(usuarios));
-    alert("Cadastro realizado com sucesso! Faça login para continuar.");
-    alternarFormulario();
 }
 
-function fazerLogin() {
+async function fazerLogin() {
     let usuario = document.getElementById("login-usuario").value;
     let senha = document.getElementById("login-senha").value;
 
@@ -90,27 +100,50 @@ function fazerLogin() {
         return;
     }
 
-    let usuarios = JSON.parse(localStorage.getItem("usuarios")) || {};
+    try {
+        const resposta = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario, senha }),
+        });
+        const dados = await resposta.json();
 
-    if (!usuarios[usuario]) {
-        alert("Usuário não encontrado!");
-        return;
+        if (!resposta.ok) {
+            alert(dados.erro || "Não foi possível fazer login.");
+            return;
+        }
+
+        // Login bem-sucedido: hidrata o cache local com os dados vindos do banco
+        let usuarios = JSON.parse(localStorage.getItem("usuarios")) || {};
+        usuarios[dados.usuario] = {
+            email: dados.email,
+            avatar: dados.avatar,
+            ...dados.progresso,
+        };
+        localStorage.setItem("usuarios", JSON.stringify(usuarios));
+
+        usuarioAtual = dados.usuario;
+        tokenSessao = dados.token;
+        localStorage.setItem("usuarioAtual", dados.usuario);
+        localStorage.setItem("tokenSessao", dados.token);
+        irParaApp();
+    } catch (erro) {
+        alert("Não foi possível conectar ao servidor. Tente novamente.");
     }
-
-    if (usuarios[usuario].senha !== senha) {
-        alert("Senha incorreta!");
-        return;
-    }
-
-    // Login bem-sucedido
-    usuarioAtual = usuario;
-    localStorage.setItem("usuarioAtual", usuario);
-    irParaApp();
 }
 
 function fazerLogout() {
+    if (usuarioAtual && tokenSessao) {
+        fetch("/api/logout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ usuario: usuarioAtual, token: tokenSessao }),
+        }).catch(() => {});
+    }
     usuarioAtual = null;
+    tokenSessao = null;
     localStorage.removeItem("usuarioAtual");
+    localStorage.removeItem("tokenSessao");
     document.getElementById("tela-autenticacao").classList.remove("tela-oculta");
     document.getElementById("tela-autenticacao").classList.add("tela-ativa");
     document.getElementById("tela-app").classList.remove("tela-ativa");
@@ -161,20 +194,22 @@ function carregarDadosUsuario() {
             ? dados.progressoMeta
             : { data: null, fases: 0 };
         agendaEventos = Array.isArray(dados.agendaEventos) ? dados.agendaEventos : [];
+        tarefasCompletas = Number(dados.tarefasCompletas) > 0 ? Number(dados.tarefasCompletas) : 0;
+        tarefasSemana = dados.tarefasSemana && typeof dados.tarefasSemana === "object"
+            ? dados.tarefasSemana
+            : { inicio: null, total: 0 };
         Object.keys(respostasUsuarioGame).forEach(chaveFase => {
             const respostas = respostasUsuarioGame[chaveFase];
             if (Array.isArray(respostas) && respostas.length > 0 && respostas.every(resposta => resposta >= 0)) {
                 fasesConcluidas[chaveFase] = true;
             }
         });
-        localStorage.setItem("usuarios", JSON.stringify({
-            ...usuarios,
-            [usuarioAtual]: {
-                ...dados,
-                respostasUsuarioGame,
-                fasesConcluidas
-            }
-        }));
+        usuarios[usuarioAtual] = {
+            ...dados,
+            respostasUsuarioGame,
+            fasesConcluidas
+        };
+        salvarUsuarioLocal(usuarios);
         quizDiario = dados.quizDiario || null;
         atualizarQuizDiarioParaUsuario();
         
@@ -205,7 +240,6 @@ function salvarDadosUsuario() {
     usuarios[usuarioAtual] = {
         ...dadosAtuais,
         email: dadosAtuais.email,
-        senha: dadosAtuais.senha,
         nivel: nivel,
         pontos: pontos,
         badges: badges,
@@ -220,10 +254,12 @@ function salvarDadosUsuario() {
         metaDiaria: metaDiaria,
         progressoMeta: progressoMeta,
         agendaEventos: agendaEventos,
+        tarefasCompletas: tarefasCompletas,
+        tarefasSemana: tarefasSemana,
         avatar: dadosAtuais.avatar,
         quizDiario: quizDiario || dadosAtuais.quizDiario || null
     };
-    localStorage.setItem("usuarios", JSON.stringify(usuarios));
+    salvarUsuarioLocal(usuarios);
 }
 
 // ========== SISTEMA DE MATÉRIAS ==========
@@ -655,6 +691,8 @@ let ultimaFaseGame = null;
 let metaDiaria = 1;
 let progressoMeta = { data: null, fases: 0 };
 let agendaEventos = [];
+let tarefasCompletas = 0;
+let tarefasSemana = { inicio: null, total: 0 };
 
 function adicionarEventoAgenda() {
     const tituloInput = document.getElementById("agenda-titulo");
@@ -820,7 +858,7 @@ function atualizarQuizDiarioParaUsuario() {
         };
 
         usuarios[usuarioAtual] = { ...dados, quizDiario: dados.quizDiario };
-        localStorage.setItem("usuarios", JSON.stringify(usuarios));
+        salvarUsuarioLocal(usuarios);
     }
 
     quizDiario = dados.quizDiario;
@@ -1786,7 +1824,7 @@ function finalizarQuizDiario() {
         if (dados && dados.quizDiario && dados.quizDiario.data === obterDataHoje()) {
             dados.quizDiario = { ...dados.quizDiario, concluido: true };
             usuarios[usuarioAtual] = dados;
-            localStorage.setItem("usuarios", JSON.stringify(usuarios));
+            salvarUsuarioLocal(usuarios);
             quizDiario = dados.quizDiario;
         }
     }
@@ -1849,16 +1887,14 @@ function concluir(id) {
     }
 
     elemento.remove();
-    let tarefasCompletas = parseInt(localStorage.getItem("tarefas_completas_" + usuarioAtual) || "0", 10);
-    localStorage.setItem("tarefas_completas_" + usuarioAtual, String(tarefasCompletas + 1));
+    tarefasCompletas = tarefasCompletas + 1;
     const inicioSemana = new Date();
     inicioSemana.setDate(inicioSemana.getDate() - inicioSemana.getDay());
     const chaveSemana = formatarDataLocal(inicioSemana);
-    const registroSemana = JSON.parse(localStorage.getItem("tarefas_semana_" + usuarioAtual) || "{}");
-    localStorage.setItem("tarefas_semana_" + usuarioAtual, JSON.stringify({
+    tarefasSemana = {
         inicio: chaveSemana,
-        total: registroSemana.inicio === chaveSemana ? Number(registroSemana.total || 0) + 1 : 1
-    }));
+        total: tarefasSemana.inicio === chaveSemana ? Number(tarefasSemana.total || 0) + 1 : 1
+    };
     registrarDiaEstudo();
     adicionarPontos(10);
     mostrarEfeito("🎉 Tarefa Concluída! +10 Pontos");
@@ -1933,8 +1969,7 @@ function verificarBadges() {
     if (pontos >= 50) desbloquearBadge("cinco_pontos");
     
     // Verificar badge de tarefas completas
-    let tarefasCompletas = localStorage.getItem("tarefas_completas_" + usuarioAtual) || 0;
-    if (parseInt(tarefasCompletas) >= 10) desbloquearBadge("dez_tarefas");
+    if (tarefasCompletas >= 10) desbloquearBadge("dez_tarefas");
 }
 
 function atualizarBadges() {
@@ -2026,9 +2061,11 @@ window.addEventListener("load", () => {
     loadTheme();
     // Verificar se usuário já está logado
     let usuarioLogado = localStorage.getItem("usuarioAtual");
-    
-    if (usuarioLogado) {
+    let tokenSalvo = localStorage.getItem("tokenSessao");
+
+    if (usuarioLogado && tokenSalvo) {
         usuarioAtual = usuarioLogado;
+        tokenSessao = tokenSalvo;
         irParaApp();
     } else {
         // Mostrar tela de autenticação
