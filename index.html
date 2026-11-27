@@ -1,15 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="StudyQuest: estude jogando, suba de nível e acompanhe seu progresso.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <title>StudyQuest - Organize seus estudos</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <div class="bg-decor" aria-hidden="true">
+        <span class="blob blob-1"></span>
+        <span class="blob blob-2"></span>
+        <span class="blob blob-3"></span>
+    </div>
 
     <!-- TELA DE LOGIN/CADASTRO -->
     <div id="tela-autenticacao" class="tela-ativa">
+        <div class="auth-wrapper">
+        <section class="auth-hero">
+            <div class="auth-logo"><span>🎓</span> StudyQuest</div>
+            <h2 class="auth-hero-titulo">Estudar pode ser uma <span>aventura</span>.</h2>
+            <p class="auth-hero-texto">Responda desafios, ganhe pontos, suba de nível e dispute o topo do ranking com seus amigos.</p>
+            <ul class="auth-features">
+                <li><span>🎮</span><div><strong>Desafios por matéria</strong><small>Fases que ficam mais difíceis conforme você avança</small></div></li>
+                <li><span>❓</span><div><strong>Quiz diário</strong><small>Perguntas novas todos os dias</small></div></li>
+                <li><span>🏆</span><div><strong>Ranking e conquistas</strong><small>Mantenha sua sequência e colecione medalhas</small></div></li>
+            </ul>
+            <div class="auth-floaters" aria-hidden="true">
+                <span>⭐</span><span>📚</span><span>🚀</span><span>🧠</span>
+            </div>
+        </section>
         <div class="container-auth">
            <h1>StudyQuest</h1>
             
@@ -44,6 +68,7 @@
                 <button onclick="fazerCadastro()" class="btn-auth">Cadastrar</button>
                 <p class="toggle-form">Já tem conta? <span onclick="alternarFormulario()">Faça login</span></p>
             </div>
+        </div>
         </div>
     </div>
 
@@ -116,7 +141,7 @@
             <main class="conteudo-principal">
                 <div class="header">
                     <div class="header-top">
-                       <h1>StudyQuest</h1>
+                       <h1><span class="logo-icone">🎓</span> StudyQuest</h1>
                         <div class="user-info">
                             <button id="theme-toggle" onclick="toggleTheme()" class="btn-theme">🌙 Dark</button>
                             <span id="usuario-nome">Usuário</span>
